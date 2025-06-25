@@ -19,7 +19,7 @@
     }
 
     #lessonsContainer {
-      max-width: 1600px; /* ⬅️ Change this to resize entire grid width */
+      max-width: 1600px;
       margin: 0 auto;
     }
 
@@ -28,7 +28,7 @@
       align-items: flex-start;
       margin-bottom: 20px;
       padding-bottom: 15px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.08); /* Low opacity line */
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     }
 
     .studio-label {
@@ -79,7 +79,7 @@
 
   <script>
     const apiUrl = "https://corsproxy.io/?https://script.google.com/macros/s/AKfycbyKwmPdlfncmfegTPZgmds4mHglmjC7s6vTHY6F_urcSaK0fR366G58ABzgbx0wmCuEqQ/exec";
-    
+
     const studioNames = [
       "Studio 1",
       "Studio 2",
@@ -133,7 +133,7 @@
 
         const matchingEvents = events.filter(event =>
           event.location?.toLowerCase().includes(studio.toLowerCase()) &&
-          isWithinNextHours(event.startTime, event.endTime, 3) // Show events for next 3 hours
+          isWithinNextHours(event.startTime, event.endTime, 3)
         );
 
         if (matchingEvents.length === 0) {
@@ -161,12 +161,12 @@
     fetch(apiUrl)
       .then(res => res.json())
       .then(data => {
-        console.log("Data from API:", data);
+        console.log("📦 Fetched lesson data:", data);
         renderLessons(data);
       })
       .catch(err => {
         document.querySelector('.loading').textContent = '❌ Failed to load lessons.';
-        console.error("Fetch error:", err);
+        console.error("❌ Fetch error:", err);
       });
   </script>
 
