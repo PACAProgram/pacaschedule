@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Upcoming Lessons</title>
   <style>
     body {
@@ -11,33 +11,28 @@
       background-color: #ffffff;
       font-family: Arial, sans-serif;
     }
-
     h1 {
       text-align: center;
       color: #1e3a8a;
       margin-bottom: 30px;
     }
-
     .studio-row {
       display: flex;
       align-items: flex-start;
       margin-bottom: 20px;
     }
-
     .studio-label {
       width: 240px;
       font-weight: bold;
       color: #1e3a8a;
       padding-top: 10px;
     }
-
     .studio-events {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       flex: 1;
     }
-
     .event-tile {
       background: #f3f4f6;
       border-radius: 15px;
@@ -46,16 +41,13 @@
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
       font-size: 0.95em;
     }
-
     .event-tile.highlight {
       background: #d1fae5;
       border: 2px solid #059669;
     }
-
     .event-tile strong {
       color: #111827;
     }
-
     .loading {
       text-align: center;
       color: #6b7280;
@@ -82,33 +74,28 @@
     "Recording Studio (Calvary Christian College)"
   ];
 
-  function parseICSDate(str) {
-    if (!str || !/^\d{8}T\d{6}Z$/.test(str)) return null;
-    const [y, mo, d, h, mi, s] = [
-      str.slice(0, 4), str.slice(4, 6), str.slice(6, 8),
-      str.slice(9, 11), str.slice(11, 13), str.slice(13, 15)
-    ];
-    return new Date(Date.UTC(y, mo - 1, d, h, mi, s));
+  function parseICSToDate(icsString) {
+    const match = icsString.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
+    if (!match) return null;
+    const [, y, m, d, h, min, s] = match;
+    return new Date(`${y}-${m}-${d}T${h}:${min}:${s}Z`);
   }
 
-  function formatTime(date) {
-    if (!(date instanceof Date) || isNaN(date)) return "Invalid Date";
-    return date.toLocaleTimeString('en-AU', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
+  function formatTime(dateObj) {
+    return dateObj.toLocaleTimeString('en-AU', {
+      hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Australia/Sydney'
     });
   }
 
-  function isWithinNextHours(startDate, endDate, hours) {
+  function isWithinNextHours(start, end, hours) {
     const now = new Date();
-    const cutoff = new Date(now.getTime() + hours * 60 * 60 * 1000);
-    return startDate <= cutoff && endDate >= now;
+    const cutoff = new Date(now.getTime() + hours * 3600000);
+    return start <= cutoff && end >= now;
   }
 
-  function isHappeningNow(startDate, endDate) {
+  function isHappeningNow(start, end) {
     const now = new Date();
-    return now >= startDate && now <= endDate;
+    return now >= start && now <= end;
   }
 
   function renderLessons(events) {
@@ -129,30 +116,25 @@
       tiles.className = 'studio-events';
 
       const matchingEvents = events.filter(event => {
-        const location = event.location || "";
-        const startDate = parseICSDate(event.start);
-        const endDate = parseICSDate(event.end);
-
-        return location.includes(studio) &&
-               startDate && endDate &&
-               isWithinNextHours(startDate, endDate, 3);
+        const start = parseICSToDate(event.start);
+        const end = parseICSToDate(event.end);
+        return event.location === studio && isWithinNextHours(start, end, 3);
       });
 
       if (matchingEvents.length === 0) {
         tiles.innerHTML = "<div style='color: #9ca3af;'>No lessons</div>";
       } else {
         matchingEvents.forEach(event => {
-          const startDate = parseICSDate(event.start);
-          const endDate = parseICSDate(event.end);
-
+          const start = parseICSToDate(event.start);
+          const end = parseICSToDate(event.end);
           const tile = document.createElement('div');
           tile.className = 'event-tile';
-          if (isHappeningNow(startDate, endDate)) {
+          if (isHappeningNow(start, end)) {
             tile.classList.add('highlight');
           }
           tile.innerHTML = `
             <strong>${event.summary}</strong><br>
-            ${formatTime(startDate)}
+            ${formatTime(start)}
           `;
           tiles.appendChild(tile);
         });
@@ -166,7 +148,7 @@
   fetch(apiUrl)
     .then(res => res.json())
     .then(data => {
-      console.log("Fetched data:", data);
+      console.log("Fetched Data:", data);
       renderLessons(data);
     })
     .catch(err => {
