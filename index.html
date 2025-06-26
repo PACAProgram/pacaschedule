@@ -3,41 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Today's Lessons (AEDT)</title>
-  <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+  <title>Upcoming Lessons</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
       background: #fff;
+      padding: 30px;
     }
     h1 {
-      text-align: center;
       color: #1e3a8a;
+      text-align: center;
     }
     .studio-row {
-      margin: 25px 0;
+      display: flex;
+      margin-bottom: 20px;
     }
-    .studio-name {
+    .studio-label {
       font-weight: bold;
       color: #1e3a8a;
-      margin-bottom: 10px;
+      width: 260px;
+    }
+    .studio-events {
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
     }
     .event-tile {
       background: #f3f4f6;
-      display: inline-block;
-      padding: 10px 15px;
-      margin: 5px;
       border-radius: 12px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 10px 14px;
+      min-width: 140px;
+      font-size: 0.9em;
     }
     .event-tile.highlight {
       background: #d1fae5;
       border: 2px solid #059669;
     }
     .loading {
-      color: #666;
+      color: #6b7280;
       text-align: center;
+      margin: 20px 0;
     }
   </style>
 </head>
@@ -48,89 +54,95 @@
 <div id="lessonsContainer"></div>
 
 <script>
-const { DateTime } = luxon;
-const apiUrl = "https://pacman.pacaprogram.workers.dev/";
-const studioNames = [
-  "Studio 1 (Calvary Christian College)",
-  "Studio 2 (Calvary Christian College)",
-  "Studio 3 (Calvary Christian College)",
-  "Studio 4 (Calvary Christian College)",
-  "Studio 5 (Calvary Christian College)",
-  "Studio 6 (Calvary Christian College)",
-  "Recording Studio (Calvary Christian College)"
-];
+  const apiUrl = "https://pacman.pacaprogram.workers.dev/";
+  const studioNames = [
+    "Studio 1 (Calvary Christian College)",
+    "Studio 2 (Calvary Christian College)",
+    "Studio 3 (Calvary Christian College)",
+    "Studio 4 (Calvary Christian College)",
+    "Studio 5 (Calvary Christian College)",
+    "Studio 6 (Calvary Christian College)",
+    "Recording Studio (Calvary Christian College)"
+  ];
 
-function parseToAEDT(isoStr) {
-  return DateTime.fromISO(isoStr, { zone: 'utc' }).setZone("Australia/Sydney");
-}
-
-function isTodayAEDT(aedtDateTime) {
-  const now = DateTime.now().setZone("Australia/Sydney");
-  return now.hasSame(aedtDateTime, 'day');
-}
-
-function isNowBetween(startAEDT, endAEDT) {
-  const now = DateTime.now().setZone("Australia/Sydney");
-  return now >= startAEDT && now <= endAEDT;
-}
-
-function formatTime(dt) {
-  return dt.toLocaleString(DateTime.TIME_SIMPLE);
-}
-
-function renderLessons(events) {
-  document.querySelector(".loading").style.display = "none";
-  const container = document.getElementById("lessonsContainer");
-  container.innerHTML = "";
-
-  studioNames.forEach(studio => {
-    const studioRow = document.createElement("div");
-    studioRow.className = "studio-row";
-
-    const title = document.createElement("div");
-    title.className = "studio-name";
-    title.textContent = studio;
-    studioRow.appendChild(title);
-
-    const filtered = events.filter(event => {
-      if (!event.location || !event.start || !event.end) return false;
-      const locMatch = event.location.toLowerCase().includes(studio.toLowerCase());
-      const startAEDT = parseToAEDT(event.start);
-      return locMatch && isTodayAEDT(startAEDT);
+  function formatTime(dateStr) {
+    const d = new Date(dateStr);
+    return d.toLocaleTimeString('en-AU', {
+      hour: '2-digit', minute: '2-digit', hour12: true,
+      timeZone: 'Australia/Sydney'
     });
+  }
 
-    if (filtered.length === 0) {
-      studioRow.innerHTML += `<div style='color:#888;'>No lessons</div>`;
-    } else {
-      filtered.forEach(event => {
-        const startAEDT = parseToAEDT(event.start);
-        const endAEDT = parseToAEDT(event.end);
-        const active = isNowBetween(startAEDT, endAEDT);
+  function isTodayAEDT(dateStr) {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const dAEDT = new Intl.DateTimeFormat('en-AU', {
+      timeZone: 'Australia/Sydney', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).format(d);
 
-        const tile = document.createElement("div");
-        tile.className = "event-tile";
-        if (active) tile.classList.add("highlight");
-        tile.innerHTML = `
-          <strong>${event.summary}</strong><br>
-          ${formatTime(startAEDT)}
-        `;
-        studioRow.appendChild(tile);
-      });
-    }
-    container.appendChild(studioRow);
-  });
-}
+    const todayAEDT = new Intl.DateTimeFormat('en-AU', {
+      timeZone: 'Australia/Sydney', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).format(now);
 
-fetch(apiUrl)
-  .then(res => res.json())
-  .then(data => {
-    console.log("Fetched:", data);
-    renderLessons(data);
-  })
-  .catch(err => {
-    document.querySelector(".loading").textContent = '❌ Failed to load lessons.';
-    console.error(err);
-  });
+    return dAEDT === todayAEDT;
+  }
+
+  function isHappeningNow(start, end) {
+    const now = new Date();
+    const s = new Date(start);
+    const e = new Date(end);
+    return now >= s && now <= e;
+  }
+
+  function renderLessons(events) {
+    document.querySelector('.loading').style.display = 'none';
+    const container = document.getElementById('lessonsContainer');
+    container.innerHTML = '';
+
+    studioNames.forEach(studio => {
+      const row = document.createElement('div');
+      row.className = 'studio-row';
+
+      const label = document.createElement('div');
+      label.className = 'studio-label';
+      label.textContent = studio;
+
+      const tiles = document.createElement('div');
+      tiles.className = 'studio-events';
+
+      const filtered = events.filter(ev =>
+        ev.location?.toLowerCase().includes(studio.toLowerCase()) &&
+        isTodayAEDT(ev.start)
+      );
+
+      if (filtered.length === 0) {
+        tiles.innerHTML = "<div style='color: #9ca3af;'>No lessons</div>";
+      } else {
+        filtered.forEach(ev => {
+          const tile = document.createElement('div');
+          tile.className = 'event-tile';
+          if (isHappeningNow(ev.start, ev.end)) {
+            tile.classList.add('highlight');
+          }
+          tile.innerHTML = `<strong>${ev.summary}</strong><br>${formatTime(ev.start)}`;
+          tiles.appendChild(tile);
+        });
+      }
+
+      row.appendChild(label);
+      row.appendChild(tiles);
+      container.appendChild(row);
+    });
+  }
+
+  fetch(apiUrl)
+    .then(res => res.json())
+    .then(data => renderLessons(data))
+    .catch(err => {
+      console.error("Fetch failed", err);
+      document.querySelector('.loading').textContent = '❌ Failed to load lessons.';
+    });
 </script>
+
 </body>
 </html>
