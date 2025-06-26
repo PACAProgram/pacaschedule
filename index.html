@@ -131,7 +131,8 @@
         event.location?.toLowerCase() === studio.toLowerCase()
       );
 
-      const filtered = matchingEvents.filter(event => {
+      cconsole.log("📦 Event:", event);
+const filtered = matchingEvents.filter(event => {
         const start = parseUTC(event.start);
         const end = parseUTC(event.end);
         event.startTime = start;
