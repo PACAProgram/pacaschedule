@@ -84,14 +84,32 @@
     "Recording Studio (Calvary Christian College)"
   ];
 
-  function formatTime(isoStr) {
-    return DateTime.fromISO(isoStr, { zone: "Australia/Sydney" }).toFormat("h:mm a");
+  function parseICS(ics) {
+    const match = ics.match(/^([0-9]{4})([0-9]{2})([0-9]{2})T([0-9]{2})([0-9]{2})([0-9]{2})Z$/);
+    if (!match) return null;
+    const [_, y, mo, d, h, mi, s] = match;
+    return DateTime.fromObject({
+      year: +y,
+      month: +mo,
+      day: +d,
+      hour: +h,
+      minute: +mi,
+      second: +s
+    }, { zone: 'UTC' }).setZone('Australia/Sydney');
   }
 
-  function isTodayAEDT(startIso) {
+  function formatTime(dt) {
+    return dt.toFormat("h:mm a");
+  }
+
+  function isTodayAEDT(dt) {
     const now = DateTime.now().setZone("Australia/Sydney");
-    const start = DateTime.fromISO(startIso, { zone: "Australia/Sydney" });
-    return now.hasSame(start, "day") && now.hasSame(start, "month") && now.hasSame(start, "year");
+    return now.hasSame(dt, "day") && now.hasSame(dt, "month") && now.hasSame(dt, "year");
+  }
+
+  function isHappeningNow(start, end) {
+    const now = DateTime.now().setZone("Australia/Sydney");
+    return now >= start && now <= end;
   }
 
   function renderLessons(events) {
@@ -111,10 +129,17 @@
       const tiles = document.createElement('div');
       tiles.className = 'studio-events';
 
-      const matchingEvents = events.filter(event =>
-        event.location?.includes(studio) &&
-        isTodayAEDT(event.start)
-      );
+      const matchingEvents = events
+        .map(event => ({
+          ...event,
+          startDT: parseICS(event.start),
+          endDT: parseICS(event.end)
+        }))
+        .filter(event =>
+          event.location === studio &&
+          event.startDT && event.endDT &&
+          isTodayAEDT(event.startDT)
+        );
 
       if (matchingEvents.length === 0) {
         tiles.innerHTML = "<div style='color: #9ca3af;'>No lessons</div>";
@@ -122,9 +147,12 @@
         matchingEvents.forEach(event => {
           const tile = document.createElement('div');
           tile.className = 'event-tile';
+          if (isHappeningNow(event.startDT, event.endDT)) {
+            tile.classList.add('highlight');
+          }
           tile.innerHTML = `
             <strong>${event.summary}</strong><br>
-            ${formatTime(event.start)} - ${formatTime(event.end)}
+            ${formatTime(event.startDT)} - ${formatTime(event.endDT)}
           `;
           tiles.appendChild(tile);
         });
