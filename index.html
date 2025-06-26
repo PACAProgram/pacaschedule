@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>All Lessons (Debug Mode)</title>
+  <title>Today's Lessons (AEDT)</title>
   <style>
     body { font-family: sans-serif; padding: 2rem; background: #fafafa; }
     table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
@@ -12,8 +12,8 @@
   </style>
 </head>
 <body>
-  <h1>All Lessons (No Filtering)</h1>
-  <p><em>Showing all lessons regardless of date. Times shown in AEDT.</em></p>
+  <h1>Today's Lessons (AEDT)</h1>
+  <p><em>Powered by Cloudflare Worker</em></p>
   <table id="lessons">
     <thead>
       <tr><th>Title</th><th>Location</th><th>Start (AEDT)</th><th>End (AEDT)</th><th>Start (UTC)</th></tr>
@@ -46,10 +46,28 @@
       }).format(date);
     }
 
+    function isTodayAEDT(date) {
+      const today = new Intl.DateTimeFormat("en-AU", {
+        timeZone: "Australia/Sydney",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).format(new Date());
+
+      const lessonDate = new Intl.DateTimeFormat("en-AU", {
+        timeZone: "Australia/Sydney",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).format(date);
+
+      return today === lessonDate;
+    }
+
     function render(events) {
       const tbody = document.querySelector("#lessons tbody");
       if (!events.length) {
-        tbody.innerHTML = '<tr><td colspan="5">No lessons found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5">No lessons today.</td></tr>';
         return;
       }
       tbody.innerHTML = events.map(evt => `
@@ -72,8 +90,9 @@
         end: parseUTC(e.end)
       })).filter(e => e.start && e.end);
 
-      parsed.sort((a, b) => a.location.localeCompare(b.location));
-      render(parsed);
+      const filtered = parsed.filter(e => isTodayAEDT(e.start));
+      filtered.sort((a, b) => a.location.localeCompare(b.location));
+      render(filtered);
     }
 
     loadLessons();
