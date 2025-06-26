@@ -91,18 +91,22 @@
     });
   }
 
+  function nowInAEDT() {
+    return new Date(new Date().toLocaleString('en-AU', { timeZone: 'Australia/Sydney' }));
+  }
+
   function parseUTC(utcString) {
     return new Date(utcString.replace(/Z$/, 'Z'));
   }
 
   function isWithinNextHours(start, end, hours) {
-    const now = new Date();
+    const now = nowInAEDT();
     const cutoff = new Date(now.getTime() + hours * 3600 * 1000);
     return start <= cutoff && end >= now;
   }
 
   function isHappeningNow(start, end) {
-    const now = new Date();
+    const now = nowInAEDT();
     return now >= start && now <= end;
   }
 
