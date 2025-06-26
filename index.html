@@ -127,7 +127,7 @@
 
       const matchingEvents = events.filter(event => {
         console.log("📦 EVENT:", event);
-        return event.location?.toLowerCase() === studio.toLowerCase();
+        return event.location?.toLowerCase().includes(studio.toLowerCase());
       });
 
       const filtered = matchingEvents.map(event => {
