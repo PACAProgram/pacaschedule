@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Upcoming Lessons</title>
   <style>
     body {
@@ -25,7 +25,7 @@
     }
 
     .studio-label {
-      width: 300px;
+      width: 240px;
       font-weight: bold;
       color: #1e3a8a;
       padding-top: 10px;
@@ -70,7 +70,7 @@
 <div id="lessonsContainer"></div>
 
 <script>
-  const apiUrl = "https://pacman.pacaprogram.workers.dev";
+  const apiUrl = "https://pacman.pacaprogram.workers.dev/";
 
   const studioNames = [
     "Studio 1 (Calvary Christian College)",
@@ -82,30 +82,33 @@
     "Recording Studio (Calvary Christian College)"
   ];
 
+  function parseICSDate(str) {
+    if (!str || !/^\d{8}T\d{6}Z$/.test(str)) return null;
+    const [y, mo, d, h, mi, s] = [
+      str.slice(0, 4), str.slice(4, 6), str.slice(6, 8),
+      str.slice(9, 11), str.slice(11, 13), str.slice(13, 15)
+    ];
+    return new Date(Date.UTC(y, mo - 1, d, h, mi, s));
+  }
+
   function formatTime(date) {
+    if (!(date instanceof Date) || isNaN(date)) return "Invalid Date";
     return date.toLocaleTimeString('en-AU', {
       hour: '2-digit',
       minute: '2-digit',
-      hour12: true,
-      timeZone: 'Australia/Sydney'
+      hour12: true
     });
   }
 
-  function nowInAEDT() {
-    return new Date(new Date().toLocaleString('en-AU', { timeZone: 'Australia/Sydney' }));
+  function isWithinNextHours(startDate, endDate, hours) {
+    const now = new Date();
+    const cutoff = new Date(now.getTime() + hours * 60 * 60 * 1000);
+    return startDate <= cutoff && endDate >= now;
   }
 
-  function parseUTC(utcString) {
-    return new Date(utcString.replace(/Z$/, 'Z'));
-  }
-
-  function isWithinNextHours(start, end, hours) {
-    return true; // Disable filtering temporarily for debug
-  }
-
-  function isHappeningNow(start, end) {
-    const now = nowInAEDT();
-    return now >= start && now <= end;
+  function isHappeningNow(startDate, endDate) {
+    const now = new Date();
+    return now >= startDate && now <= endDate;
   }
 
   function renderLessons(events) {
@@ -126,30 +129,30 @@
       tiles.className = 'studio-events';
 
       const matchingEvents = events.filter(event => {
-        console.log("📦 EVENT:", event);
-        return event.location?.toLowerCase().includes(studio.toLowerCase());
+        const location = event.location || "";
+        const startDate = parseICSDate(event.start);
+        const endDate = parseICSDate(event.end);
+
+        return location.includes(studio) &&
+               startDate && endDate &&
+               isWithinNextHours(startDate, endDate, 3);
       });
 
-      const filtered = matchingEvents.map(event => {
-        const start = parseUTC(event.start);
-        const end = parseUTC(event.end);
-        event.startTime = start;
-        event.endTime = end;
-        return event;
-      });
-
-      if (filtered.length === 0) {
+      if (matchingEvents.length === 0) {
         tiles.innerHTML = "<div style='color: #9ca3af;'>No lessons</div>";
       } else {
-        filtered.forEach(event => {
+        matchingEvents.forEach(event => {
+          const startDate = parseICSDate(event.start);
+          const endDate = parseICSDate(event.end);
+
           const tile = document.createElement('div');
           tile.className = 'event-tile';
-          if (isHappeningNow(event.startTime, event.endTime)) {
+          if (isHappeningNow(startDate, endDate)) {
             tile.classList.add('highlight');
           }
           tile.innerHTML = `
             <strong>${event.summary}</strong><br>
-            ${formatTime(event.startTime)}
+            ${formatTime(startDate)}
           `;
           tiles.appendChild(tile);
         });
@@ -163,7 +166,7 @@
   fetch(apiUrl)
     .then(res => res.json())
     .then(data => {
-      console.log("✅ Data from Cloudflare:", data);
+      console.log("Fetched data:", data);
       renderLessons(data);
     })
     .catch(err => {
