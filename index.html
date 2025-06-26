@@ -70,8 +70,10 @@
     }
 
     async function loadLessons() {
+      console.log("📡 Fetching data from", ENDPOINT);
       const res = await fetch(ENDPOINT);
       const data = await res.json();
+      console.log("📦 Raw data:", data);
 
       const parsed = data.map(e => ({
         ...e,
@@ -79,7 +81,11 @@
         end: parseUTC(e.end)
       })).filter(e => e.start && e.end);
 
+      console.log("📅 Parsed events:", parsed);
+
       const filtered = parsed.filter(e => isTodayAEDT(e.start));
+      console.log("📆 Filtered (Today AEDT):", filtered);
+
       filtered.sort((a, b) => a.location.localeCompare(b.location));
       render(filtered);
     }
