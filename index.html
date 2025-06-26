@@ -47,21 +47,13 @@
     }
 
     function isTodayAEDT(date) {
-      const today = new Intl.DateTimeFormat("en-AU", {
-        timeZone: "Australia/Sydney",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit"
-      }).format(new Date());
+      const nowAEDT = new Date().toLocaleString("en-AU", { timeZone: "Australia/Sydney" });
+      const today = new Date(nowAEDT);
+      const lesson = new Date(date.toLocaleString("en-AU", { timeZone: "Australia/Sydney" }));
 
-      const lessonDate = new Intl.DateTimeFormat("en-AU", {
-        timeZone: "Australia/Sydney",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit"
-      }).format(date);
-
-      return today === lessonDate;
+      return today.getFullYear() === lesson.getFullYear() &&
+             today.getMonth() === lesson.getMonth() &&
+             today.getDate() === lesson.getDate();
     }
 
     function render(events) {
