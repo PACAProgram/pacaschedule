@@ -66,11 +66,11 @@
 <body>
 
 <h1>Upcoming Lessons</h1>
-<p class="loading">🔄 Loading lessons...</p>
+<div class="loading">🔄 Loading lessons...</div>
 <div id="lessonsContainer"></div>
 
 <script>
-  const apiUrl = "https://pacman.pacaprogram.workers.dev";
+  const apiUrl = "https://script.google.com/macros/s/AKfycbyKwmPdlfncmfegTPZgmds4mHglmjC7s6vTHY6F_urcSaK0fR366G58ABzgbx0wmCuEqQ/exec";
 
   const studioNames = [
     "Studio 1",
@@ -125,7 +125,7 @@
 
       const matchingEvents = events.filter(event =>
         event.location?.toLowerCase().includes(studio.toLowerCase()) &&
-        isWithinNextHours(event.start, event.end, 3)
+        isWithinNextHours(event.startTime, event.endTime, 3)  // 👈 Now checks next 3 hours
       );
 
       if (matchingEvents.length === 0) {
@@ -134,13 +134,13 @@
         matchingEvents.forEach(event => {
           const tile = document.createElement('div');
           tile.className = 'event-tile';
-          if (isHappeningNow(event.start, event.end)) {
+          if (isHappeningNow(event.startTime, event.endTime)) {
             tile.classList.add('highlight');
           }
-          tile.innerHTML = `
+          tile.innerHTML = 
             <strong>${event.summary}</strong><br>
-            ${formatTime(event.start)}
-          `;
+            ${formatTime(event.startTime)}
+          ;
           tiles.appendChild(tile);
         });
       }
@@ -153,26 +153,14 @@
   fetch(apiUrl)
     .then(res => res.json())
     .then(data => {
-      console.log("Data from Cloudflare Worker:", data);
-      const parsed = data.map(evt => ({
-        ...evt,
-        start: parseICSDate(evt.start),
-        end: parseICSDate(evt.end)
-      }));
-      renderLessons(parsed);
+      console.log("Data from API:", data);
+      renderLessons(data);
     })
     .catch(err => {
       document.querySelector('.loading').textContent = '❌ Failed to load lessons.';
       console.error("Fetch error:", err);
     });
-
-  function parseICSDate(str) {
-    const match = str.match(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/);
-    if (!match) return new Date(NaN);
-    const [, y, m, d, h, min, s] = match.map(Number);
-    return new Date(Date.UTC(y, m - 1, d, h, min, s));
-  }
 </script>
 
 </body>
-</html>
+</html> 
