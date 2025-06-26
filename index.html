@@ -70,7 +70,7 @@
 <div id="lessonsContainer"></div>
 
 <script>
-  const apiUrl = "https://script.google.com/macros/s/AKfycbyKwmPdlfncmfegTPZgmds4mHglmjC7s6vTHY6F_urcSaK0fR366G58ABzgbx0wmCuEqQ/exec";
+  const apiUrl = "https://pacman.pacaprogram.workers.dev";
 
   const studioNames = [
     "Studio 1",
@@ -82,27 +82,27 @@
     "Recording Studio"
   ];
 
-  function formatTime(isoStr) {
-    const date = new Date(isoStr);
+  function formatTime(date) {
     return date.toLocaleTimeString('en-AU', {
       hour: '2-digit',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
+      timeZone: 'Australia/Sydney'
     });
   }
 
-  function isWithinNextHours(startIso, endIso, hours) {
+  function parseUTC(utcString) {
+    return new Date(utcString.replace(/Z$/, 'Z'));
+  }
+
+  function isWithinNextHours(start, end, hours) {
     const now = new Date();
-    const start = new Date(startIso);
-    const end = new Date(endIso);
-    const cutoff = new Date(now.getTime() + hours * 60 * 60 * 1000);
+    const cutoff = new Date(now.getTime() + hours * 3600 * 1000);
     return start <= cutoff && end >= now;
   }
 
-  function isHappeningNow(startIso, endIso) {
+  function isHappeningNow(start, end) {
     const now = new Date();
-    const start = new Date(startIso);
-    const end = new Date(endIso);
     return now >= start && now <= end;
   }
 
@@ -124,23 +124,30 @@
       tiles.className = 'studio-events';
 
       const matchingEvents = events.filter(event =>
-        event.location?.toLowerCase().includes(studio.toLowerCase()) &&
-        isWithinNextHours(event.startTime, event.endTime, 3)  // 👈 Now checks next 3 hours
+        event.location?.toLowerCase().includes(studio.toLowerCase())
       );
 
-      if (matchingEvents.length === 0) {
+      const filtered = matchingEvents.filter(event => {
+        const start = parseUTC(event.start);
+        const end = parseUTC(event.end);
+        event.startTime = start;
+        event.endTime = end;
+        return isWithinNextHours(start, end, 3);
+      });
+
+      if (filtered.length === 0) {
         tiles.innerHTML = "<div style='color: #9ca3af;'>No lessons</div>";
       } else {
-        matchingEvents.forEach(event => {
+        filtered.forEach(event => {
           const tile = document.createElement('div');
           tile.className = 'event-tile';
           if (isHappeningNow(event.startTime, event.endTime)) {
             tile.classList.add('highlight');
           }
-          tile.innerHTML = 
+          tile.innerHTML = `
             <strong>${event.summary}</strong><br>
             ${formatTime(event.startTime)}
-          ;
+          `;
           tiles.appendChild(tile);
         });
       }
@@ -153,7 +160,7 @@
   fetch(apiUrl)
     .then(res => res.json())
     .then(data => {
-      console.log("Data from API:", data);
+      console.log("✅ Data from Cloudflare:", data);
       renderLessons(data);
     })
     .catch(err => {
@@ -163,4 +170,4 @@
 </script>
 
 </body>
-</html> 
+</html>
