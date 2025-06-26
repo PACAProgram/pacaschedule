@@ -100,9 +100,7 @@
   }
 
   function isWithinNextHours(start, end, hours) {
-    const now = nowInAEDT();
-    const cutoff = new Date(now.getTime() + hours * 3600 * 1000);
-    return start <= cutoff && end >= now;
+    return true; // Disable filtering temporarily for debug
   }
 
   function isHappeningNow(start, end) {
@@ -127,17 +125,17 @@
       const tiles = document.createElement('div');
       tiles.className = 'studio-events';
 
-      const matchingEvents = events.filter(event =>
-        event.location?.toLowerCase() === studio.toLowerCase()
-      );
+      const matchingEvents = events.filter(event => {
+        console.log("📦 EVENT:", event);
+        return event.location?.toLowerCase() === studio.toLowerCase();
+      });
 
-      cconsole.log("📦 Event:", event);
-const filtered = matchingEvents.filter(event => {
+      const filtered = matchingEvents.map(event => {
         const start = parseUTC(event.start);
         const end = parseUTC(event.end);
         event.startTime = start;
         event.endTime = end;
-        return true;
+        return event;
       });
 
       if (filtered.length === 0) {
