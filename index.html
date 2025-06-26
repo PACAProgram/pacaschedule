@@ -137,7 +137,7 @@ const filtered = matchingEvents.filter(event => {
         const end = parseUTC(event.end);
         event.startTime = start;
         event.endTime = end;
-        return isWithinNextHours(start, end, 3);
+        return true;
       });
 
       if (filtered.length === 0) {
