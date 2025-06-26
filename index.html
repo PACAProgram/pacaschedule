@@ -25,7 +25,7 @@
     }
 
     .studio-label {
-      width: 140px;
+      width: 300px;
       font-weight: bold;
       color: #1e3a8a;
       padding-top: 10px;
@@ -73,13 +73,13 @@
   const apiUrl = "https://pacman.pacaprogram.workers.dev";
 
   const studioNames = [
-    "Studio 1",
-    "Studio 2",
-    "Studio 3",
-    "Studio 4",
-    "Studio 5",
-    "Studio 6",
-    "Recording Studio"
+    "Studio 1 (Calvary Christian College)",
+    "Studio 2 (Calvary Christian College)",
+    "Studio 3 (Calvary Christian College)",
+    "Studio 4 (Calvary Christian College)",
+    "Studio 5 (Calvary Christian College)",
+    "Studio 6 (Calvary Christian College)",
+    "Recording Studio (Calvary Christian College)"
   ];
 
   function formatTime(date) {
@@ -124,7 +124,7 @@
       tiles.className = 'studio-events';
 
       const matchingEvents = events.filter(event =>
-        event.location?.toLowerCase().includes(studio.toLowerCase())
+        event.location?.toLowerCase() === studio.toLowerCase()
       );
 
       const filtered = matchingEvents.filter(event => {
