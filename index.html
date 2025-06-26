@@ -11,28 +11,33 @@
       background-color: #ffffff;
       font-family: Arial, sans-serif;
     }
+
     h1 {
       text-align: center;
       color: #1e3a8a;
       margin-bottom: 30px;
     }
+
     .studio-row {
       display: flex;
       align-items: flex-start;
       margin-bottom: 20px;
     }
+
     .studio-label {
       width: 240px;
       font-weight: bold;
       color: #1e3a8a;
       padding-top: 10px;
     }
+
     .studio-events {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       flex: 1;
     }
+
     .event-tile {
       background: #f3f4f6;
       border-radius: 15px;
@@ -41,13 +46,16 @@
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
       font-size: 0.95em;
     }
+
     .event-tile.highlight {
       background: #d1fae5;
       border: 2px solid #059669;
     }
+
     .event-tile strong {
       color: #111827;
     }
+
     .loading {
       text-align: center;
       color: #6b7280;
@@ -74,28 +82,29 @@
     "Recording Studio (Calvary Christian College)"
   ];
 
-  function parseICSToDate(icsString) {
-    const match = icsString.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
-    if (!match) return null;
-    const [, y, m, d, h, min, s] = match;
-    return new Date(`${y}-${m}-${d}T${h}:${min}:${s}Z`);
+  function parseUTCToAEDT(utcStr) {
+    const date = new Date(utcStr);
+    return new Date(date.toLocaleString("en-AU", { timeZone: "Australia/Sydney" }));
   }
 
-  function formatTime(dateObj) {
-    return dateObj.toLocaleTimeString('en-AU', {
-      hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Australia/Sydney'
+  function formatTime(date) {
+    return date.toLocaleTimeString('en-AU', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
     });
   }
 
-  function isWithinNextHours(start, end, hours) {
-    const now = new Date();
-    const cutoff = new Date(now.getTime() + hours * 3600000);
-    return start <= cutoff && end >= now;
+  function isTodayAEDT(date) {
+    const today = new Date().toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' });
+    const lessonDate = date.toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' });
+    return today === lessonDate;
   }
 
-  function isHappeningNow(start, end) {
-    const now = new Date();
-    return now >= start && now <= end;
+  function isHappeningNow(startDate, endDate) {
+    const now = new Date().toLocaleString('en-AU', { timeZone: 'Australia/Sydney' });
+    const nowDate = new Date(now);
+    return nowDate >= startDate && nowDate <= endDate;
   }
 
   function renderLessons(events) {
@@ -115,26 +124,29 @@
       const tiles = document.createElement('div');
       tiles.className = 'studio-events';
 
-      const matchingEvents = events.filter(event => {
-        const start = parseICSToDate(event.start);
-        const end = parseICSToDate(event.end);
-        return event.location === studio && isWithinNextHours(start, end, 3);
-      });
+      const matchingEvents = events
+        .map(event => ({
+          ...event,
+          startTime: parseUTCToAEDT(event.start),
+          endTime: parseUTCToAEDT(event.end)
+        }))
+        .filter(event =>
+          event.location?.toLowerCase().includes(studio.toLowerCase()) &&
+          isTodayAEDT(event.startTime)
+        );
 
       if (matchingEvents.length === 0) {
         tiles.innerHTML = "<div style='color: #9ca3af;'>No lessons</div>";
       } else {
         matchingEvents.forEach(event => {
-          const start = parseICSToDate(event.start);
-          const end = parseICSToDate(event.end);
           const tile = document.createElement('div');
           tile.className = 'event-tile';
-          if (isHappeningNow(start, end)) {
+          if (isHappeningNow(event.startTime, event.endTime)) {
             tile.classList.add('highlight');
           }
           tile.innerHTML = `
             <strong>${event.summary}</strong><br>
-            ${formatTime(start)}
+            ${formatTime(event.startTime)}
           `;
           tiles.appendChild(tile);
         });
@@ -148,7 +160,7 @@
   fetch(apiUrl)
     .then(res => res.json())
     .then(data => {
-      console.log("Fetched Data:", data);
+      console.log("Data from Cloudflare Worker:", data);
       renderLessons(data);
     })
     .catch(err => {
