@@ -107,9 +107,8 @@
         }).format(e.start));
       });
 
-      const todayOnly = parsed.filter(e => isTodayAEDT(e.start));
-      todayOnly.sort((a, b) => a.location.localeCompare(b.location));
-      render(todayOnly);
+     parsed.sort((a, b) => a.location.localeCompare(b.location));
+render(parsed);
     }
 
     loadLessons();
