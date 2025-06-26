@@ -13,8 +13,8 @@
   </style>
 </head>
 <body>
-  <h1>Today's Lessons</h1>
-  <p><em>All times are shown in AEDT (Sydney)</em></p>
+  <h1>Today's Lessons (AEDT)</h1>
+  <p><em>Powered by Cloudflare Worker</em></p>
   <table id="lessons">
     <thead>
       <tr><th>Title</th><th>Location</th><th>Start (AEDT)</th><th>End (AEDT)</th><th>UTC (Debug)</th></tr>
@@ -86,11 +86,27 @@
     async function loadLessons() {
       const res = await fetch(ENDPOINT);
       const data = await res.json();
+
       const parsed = data.map(e => ({
         ...e,
         start: parseUTC(e.start),
         end: parseUTC(e.end)
       }));
+
+      const todayAEDT = getTodayAEDT();
+      console.log("Today (AEDT):", todayAEDT);
+
+      parsed.forEach(e => {
+        console.log("Lesson:", e.summary);
+        console.log("Start UTC:", e.start.toISOString());
+        console.log("Start AEDT:", new Intl.DateTimeFormat("en-AU", {
+          timeZone: "Australia/Sydney",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).format(e.start));
+      });
+
       const todayOnly = parsed.filter(e => isTodayAEDT(e.start));
       todayOnly.sort((a, b) => a.location.localeCompare(b.location));
       render(todayOnly);
