@@ -61,11 +61,16 @@
     }
 
     function isTodayAEDT(date) {
-      const todayParts = getAEDTDateParts(new Date());
-      const dateParts = getAEDTDateParts(date);
-      return todayParts.year === dateParts.year &&
-             todayParts.month === dateParts.month &&
-             todayParts.day === dateParts.day;
+  const todayParts = getAEDTDateParts(new Date());
+  const dateParts = getAEDTDateParts(date);
+
+  console.log("TODAY", todayParts);
+  console.log("EVENT", date.toISOString(), "→", dateParts);
+
+  return todayParts.year === dateParts.year &&
+         todayParts.month === dateParts.month &&
+         todayParts.day === dateParts.day;
+}
     }
 
     function render(events) {
