@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Upcoming Lessons</title>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -70,6 +71,7 @@
 <div id="lessonsContainer"></div>
 
 <script>
+  const { DateTime } = luxon;
   const apiUrl = "https://pacman.pacaprogram.workers.dev/";
 
   const studioNames = [
@@ -82,29 +84,14 @@
     "Recording Studio (Calvary Christian College)"
   ];
 
-  function parseUTCToAEDT(utcStr) {
-    const date = new Date(utcStr);
-    return new Date(date.toLocaleString("en-AU", { timeZone: "Australia/Sydney" }));
+  function formatTime(isoStr) {
+    return DateTime.fromISO(isoStr, { zone: "Australia/Sydney" }).toFormat("h:mm a");
   }
 
-  function formatTime(date) {
-    return date.toLocaleTimeString('en-AU', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-  }
-
-  function isTodayAEDT(date) {
-    const today = new Date().toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' });
-    const lessonDate = date.toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' });
-    return today === lessonDate;
-  }
-
-  function isHappeningNow(startDate, endDate) {
-    const now = new Date().toLocaleString('en-AU', { timeZone: 'Australia/Sydney' });
-    const nowDate = new Date(now);
-    return nowDate >= startDate && nowDate <= endDate;
+  function isTodayAEDT(startIso) {
+    const now = DateTime.now().setZone("Australia/Sydney");
+    const start = DateTime.fromISO(startIso, { zone: "Australia/Sydney" });
+    return now.hasSame(start, "day") && now.hasSame(start, "month") && now.hasSame(start, "year");
   }
 
   function renderLessons(events) {
@@ -124,16 +111,10 @@
       const tiles = document.createElement('div');
       tiles.className = 'studio-events';
 
-      const matchingEvents = events
-        .map(event => ({
-          ...event,
-          startTime: parseUTCToAEDT(event.start),
-          endTime: parseUTCToAEDT(event.end)
-        }))
-        .filter(event =>
-          event.location?.toLowerCase().includes(studio.toLowerCase()) &&
-          isTodayAEDT(event.startTime)
-        );
+      const matchingEvents = events.filter(event =>
+        event.location?.includes(studio) &&
+        isTodayAEDT(event.start)
+      );
 
       if (matchingEvents.length === 0) {
         tiles.innerHTML = "<div style='color: #9ca3af;'>No lessons</div>";
@@ -141,12 +122,9 @@
         matchingEvents.forEach(event => {
           const tile = document.createElement('div');
           tile.className = 'event-tile';
-          if (isHappeningNow(event.startTime, event.endTime)) {
-            tile.classList.add('highlight');
-          }
           tile.innerHTML = `
             <strong>${event.summary}</strong><br>
-            ${formatTime(event.startTime)}
+            ${formatTime(event.start)} - ${formatTime(event.end)}
           `;
           tiles.appendChild(tile);
         });
@@ -160,7 +138,7 @@
   fetch(apiUrl)
     .then(res => res.json())
     .then(data => {
-      console.log("Data from Cloudflare Worker:", data);
+      console.log("Data from API:", data);
       renderLessons(data);
     })
     .catch(err => {
